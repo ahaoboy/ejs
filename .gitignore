@@ -6,3 +6,6 @@
 /package-lock.json
 /.idea
 /.venv
+/run.js
+/cases.csv
+/pnpm-lock.yaml
