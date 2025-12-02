@@ -3,9 +3,14 @@ import { generate } from "astring";
 import { extract as extractSig } from "./sig.ts";
 import { extract as extractN } from "./n.ts";
 import { setupNodes } from "./setup.ts";
+import { trace } from "../../trace.ts";
 
 export function preprocessPlayer(data: string): string {
-  const ast = parse(data);
+  return trace("preprocessPlayer", () => _preprocessPlayer(data));
+}
+
+function _preprocessPlayer(data: string): string {
+  const ast = trace("parse", () => parse(data));
   const body = ast.body;
 
   const block = (() => {
@@ -44,23 +49,25 @@ export function preprocessPlayer(data: string): string {
     n: [] as ESTree.ArrowFunctionExpression[],
     sig: [] as ESTree.ArrowFunctionExpression[],
   };
-  const plainExpressions = block.body.filter((node: ESTree.Node) => {
-    const n = extractN(node);
-    if (n) {
-      found.n.push(n);
-    }
-    const sig = extractSig(node);
-    if (sig) {
-      found.sig.push(sig);
-    }
-    if (node.type === "ExpressionStatement") {
-      if (node.expression.type === "AssignmentExpression") {
-        return true;
+  const plainExpressions = trace("filterExpressions", () =>
+    block.body.filter((node: ESTree.Node) => {
+      const n = extractN(node);
+      if (n) {
+        found.n.push(n);
       }
-      return node.expression.type === "Literal";
-    }
-    return true;
-  });
+      const sig = extractSig(node);
+      if (sig) {
+        found.sig.push(sig);
+      }
+      if (node.type === "ExpressionStatement") {
+        if (node.expression.type === "AssignmentExpression") {
+          return true;
+        }
+        return node.expression.type === "Literal";
+      }
+      return true;
+    })
+  );
   block.body = plainExpressions;
 
   for (const [name, options] of Object.entries(found)) {
@@ -97,14 +104,17 @@ export function preprocessPlayer(data: string): string {
 
   ast.body.splice(0, 0, ...setupNodes);
 
-  return generate(ast);
+  return trace("generate", () => generate(ast));
 }
 
 export function getFromPrepared(code: string): {
   n: ((val: string) => string) | null;
   sig: ((val: string) => string) | null;
 } {
-  const resultObj = { n: null, sig: null };
-  Function("_result", code)(resultObj);
-  return resultObj;
+  return trace("getFromPrepared", () => {
+    const resultObj: { n: null; sig: null } = { n: null, sig: null };
+    const fn = trace("Function(compile)", () => Function("_result", code));
+    trace("Function(execute)", () => fn(resultObj));
+    return resultObj;
+  });
 }

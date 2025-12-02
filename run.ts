@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 
 import { isOneOf } from "./src/utils.ts";
 import main from "./src/yt/solver/main.ts";
+import { trace, printSummary } from "./src/trace.ts";
 
 const args = argv.slice(2);
 if (args.length < 2) {
@@ -14,7 +15,7 @@ if (args.length < 2) {
   exit(1);
 }
 
-const player = readFileSync(args[0], "utf-8");
+const player = trace("readFile", () => readFileSync(args[0], "utf-8"));
 const requests = {
   n: [] as string[],
   sig: [] as string[],
@@ -27,16 +28,15 @@ for (const request of args.slice(1)) {
   }
   requests[type].push(challenge);
 }
-console.log(
-  JSON.stringify(
-    main({
-      type: "player",
-      player,
-      output_preprocessed: false,
-      requests: [
-        { type: "n", challenges: requests.n },
-        { type: "sig", challenges: requests.sig },
-      ],
-    }),
-  ),
-);
+const result = main({
+  type: "player",
+  player,
+  output_preprocessed: false,
+  requests: [
+    { type: "n", challenges: requests.n },
+    { type: "sig", challenges: requests.sig },
+  ],
+});
+
+console.log(JSON.stringify(result));
+printSummary();

@@ -1,7 +1,12 @@
 import { getFromPrepared, preprocessPlayer } from "./solvers.ts";
 import { isOneOf } from "../../utils.ts";
+import { trace } from "../../trace.ts";
 
 export default function main(input: Input): Output {
+  return trace("main", () => _main(input));
+}
+
+function _main(input: Input): Output {
   const preprocessedPlayer =
     input.type === "player"
       ? preprocessPlayer(input.player)
@@ -26,7 +31,10 @@ export default function main(input: Input): Output {
       return {
         type: "result",
         data: Object.fromEntries(
-          input.challenges.map((challenge) => [challenge, solver(challenge)]),
+          input.challenges.map((challenge) => [
+            challenge,
+            trace(`solver.${input.type}`, () => solver(challenge)),
+          ]),
         ),
       };
     } catch (error) {
