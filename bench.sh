@@ -123,7 +123,7 @@ run_tests() {
         for result in "${results[@]}"; do
             [ -z "$result" ] && continue
             local type input expected
-            IFS=$'\t' read -r type input expected <<< "$result"
+            read -r type input expected <<< "$result"
             total=$((total + 1))
 
             # Check if output contains expected result
@@ -138,7 +138,7 @@ run_tests() {
         done
     }
 
-    while IFS=$'\t' read -r player type input expected || [ -n "$player" ]; do
+    while read -r player type input expected || [ -n "$player" ]; do
         [ -z "$player" ] && continue
 
         # Check if we've reached max tests
@@ -161,7 +161,7 @@ run_tests() {
         else
             sig_args="$sig_args sig:$input"
         fi
-        expected_list="${expected_list}${type}	${input}	${expected}|"
+        expected_list="${expected_list}${type} ${input} ${expected}|"
         test_count=$((test_count + 1))
     done < "$CASES_FILE"
 
